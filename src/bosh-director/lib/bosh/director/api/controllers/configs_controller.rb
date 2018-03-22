@@ -35,6 +35,15 @@ module Bosh::Director
             limit: 1,
           ).first
 
+          if !config_hash['expected_latest_id'].nil? && config.id != config_hash['expected_latest_id']
+            status(412)
+            return json_encode(
+              'latest_id' => config.id,
+              'expected_latest_id' => config_hash['expected_latest_id'],
+              'description' => "Latest Id: '#{config.id}' does not match expected latest id",
+            )
+          end
+
           @permission_authorizer.granted_or_raise(config, :admin, token_scopes) unless config.nil?
 
           if config.nil? || config[:content] != config_hash['content']

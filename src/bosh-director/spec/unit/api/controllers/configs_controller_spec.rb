@@ -184,7 +184,7 @@ module Bosh::Director
               get '/?type=my-type&name=some-name&latest=foo'
 
               expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['code']).to eq(440010)
+              expect(JSON.parse(last_response.body)['code']).to eq(440_010)
               expect(JSON.parse(last_response.body)['description']).to eq("'latest' must be 'true' or 'false'")
             end
           end
@@ -207,7 +207,7 @@ module Bosh::Director
             get '/?type=my-type&name=some-name&limit=foo'
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(440010)
+            expect(JSON.parse(last_response.body)['code']).to eq(440_010)
             expect(JSON.parse(last_response.body)['description']).to eq("'limit' must be a number")
           end
 
@@ -215,7 +215,7 @@ module Bosh::Director
             get '/?limit=0'
 
             expect(last_response.status).to eq(400)
-            expect(JSON.parse(last_response.body)['code']).to eq(440010)
+            expect(JSON.parse(last_response.body)['code']).to eq(440_010)
             expect(JSON.parse(last_response.body)['description']).to eq("'limit' must be larger than zero")
           end
         end
@@ -272,26 +272,82 @@ module Bosh::Director
           )
         end
 
-        it 'creates a new config when one exists with different content' do
-          Models::Config.make(
-            name: 'my-name',
-            type: 'my-type',
-            content: 'a: 123',
-          )
-
-          expect do
-            post(
-              '/',
-              JSON.generate(
-                'name' => 'my-name',
-                'type' => 'my-type',
-                'content' => 'b: 12345',
-              ),
-              'CONTENT_TYPE' => 'application/json',
+        context 'when config exists with different content' do
+          it 'creates a new config if expected latest id is not specified' do
+            Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123',
             )
-          end.to change(Models::Config, :count)
+            expect do
+              post(
+                '/',
+                JSON.generate(
+                  'name' => 'my-name',
+                  'type' => 'my-type',
+                  'content' => 'b: 12345',
+                ),
+                'CONTENT_TYPE' => 'application/json',
+              )
+            end.to change(Models::Config, :count)
+            expect(last_response.status).to eq(201)
+          end
 
-          expect(last_response.status).to eq(201)
+          it 'does not create a new config if expected latest id is not latest id' do
+            config1 = Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123',
+            )
+            config2 = Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 456',
+            )
+            expect do
+              post(
+                '/',
+                JSON.generate(
+                  'name' => 'my-name',
+                  'type' => 'my-type',
+                  'content' => 'b: 789',
+                  'expected_latest_id' => config1.id,
+                ),
+                'CONTENT_TYPE' => 'application/json',
+              )
+            end.to_not change(Models::Config, :count)
+            expect(last_response.status).to eq(412)
+            expect(JSON.parse(last_response.body)['latest_id']).to eq(config2.id)
+            expect(JSON.parse(last_response.body)['description']).to include(
+              "Latest Id: '#{config2.id}' does not match expected latest id",
+            )
+          end
+
+          it 'creates a new config if expected latest id matches latest id' do
+            Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 123',
+            )
+            config2 = Models::Config.make(
+              name: 'my-name',
+              type: 'my-type',
+              content: 'a: 456',
+            )
+            expect do
+              post(
+                '/',
+                JSON.generate(
+                  'name' => 'my-name',
+                  'type' => 'my-type',
+                  'content' => 'b: 12345',
+                  'expected_latest_id' => config2.id,
+                ),
+                'CONTENT_TYPE' => 'application/json',
+              )
+            end.to change(Models::Config, :count)
+            expect(last_response.status).to eq(201)
+          end
         end
 
         it 'ignores config when config already exists' do
