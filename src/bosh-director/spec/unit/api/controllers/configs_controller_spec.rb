@@ -157,13 +157,13 @@ module Bosh::Director
               expect(result.class).to be(Array)
               expect(result.size).to eq(2)
               expect(result).to include(
-                                    'content' => config1.content,
-                                    'id' => config1.id.to_s,
-                                    'type' => config1.type,
-                                    'name' => config1.name,
-                                    'created_at' => config1.created_at.to_s,
-                                    'team' => nil,
-                                    )
+                'content' => config1.content,
+                'id' => config1.id.to_s,
+                'type' => config1.type,
+                'name' => config1.name,
+                'created_at' => config1.created_at.to_s,
+                'team' => nil,
+              )
             end
           end
 
@@ -515,7 +515,6 @@ module Bosh::Director
 
     describe 'DELETE', '/:id' do
       describe 'when user has admin access' do
-
         before { authorize('admin', 'admin') }
 
         context 'when config exists' do
@@ -529,7 +528,7 @@ module Bosh::Director
 
         context 'when config does not exists' do
           it 'deletes the config specified by id' do
-            expect(delete("/5").status).to eq(404)
+            expect(delete('/5').status).to eq(404)
           end
         end
 
