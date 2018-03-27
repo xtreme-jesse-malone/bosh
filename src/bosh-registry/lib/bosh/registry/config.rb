@@ -8,6 +8,7 @@ module Bosh::Registry
     attr_accessor :http_password
     attr_accessor :db
     attr_accessor :instance_manager
+    attr_accessor :auth
 
     def configure(config)
       validate_config(config)
@@ -18,8 +19,17 @@ module Bosh::Registry
       end
 
       @http_port = config["http"]["port"]
-      @http_user = config["http"]["user"]
-      @http_password = config["http"]["password"]
+
+      @auth = []
+
+      if config['http']['user']
+        @auth << {
+            'username' => config['http']['user'],
+            'password' => config['http']['password']
+        }
+      else
+        @auth = config['http']['auth']
+      end
 
       @db = connect_db(config["db"])
 
