@@ -38,7 +38,12 @@ module Bosh::Registry
       @logger = Bosh::Registry.logger
 
       @users = Set.new
-      @users << [Bosh::Registry.http_user, Bosh::Registry.http_password]
+      # TODO: This @users array should contain every user in Bosh::Registry.auth
+      
+      Bosh::Registry.auth.each do |user|
+
+        @users << [user['username'], user['password']]
+      end
       @instance_manager = Bosh::Registry.instance_manager
     end
 

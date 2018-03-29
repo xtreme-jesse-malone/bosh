@@ -66,9 +66,10 @@ describe Bosh::Registry do
       expect(logger).to be_kind_of(Logger)
       expect(logger.level).to eq(Logger::DEBUG)
 
+      user = Bosh::Registry.auth.first
       expect(Bosh::Registry.http_port).to eq(25777)
-      expect(Bosh::Registry.http_user).to eq("admin")
-      expect(Bosh::Registry.http_password).to eq("admin")
+      expect(user['username']).to eq("admin")
+      expect(user['password']).to eq("admin")
 
       db = Bosh::Registry.db
       expect(db).to be_kind_of(Sequel::SQLite::Database)
@@ -78,6 +79,60 @@ describe Bosh::Registry do
 
       im = Bosh::Registry.instance_manager
       expect(im).to be_kind_of(Bosh::Registry::InstanceManager::Aws)
+    end
+
+    context 'when users are defined' do
+      context 'when one user is defined in the classic way' do
+        it 'sets the user properly' do
+          config = valid_config
+          config.delete('cloud')
+          Bosh::Registry.configure(config)
+
+          expect(Bosh::Registry.auth.size).to eq(1)
+          expect(Bosh::Registry.auth[0]['username']).to eq('admin')
+          expect(Bosh::Registry.auth[0]['password']).to eq('admin')
+        end
+      end
+
+      context 'when one user is defined in the new way' do
+        it 'sets the user properly' do
+          config = valid_config
+          config.delete('cloud')
+          config['http'].delete('user')
+          config['http'].delete('password')
+
+          config['http']['auth'] = [
+              {'username' => 'admin', 'password' => 'admin'}
+          ]
+          Bosh::Registry.configure(config)
+
+          expect(Bosh::Registry.auth.size).to eq(1)
+          expect(Bosh::Registry.auth[0]['username']).to eq('admin')
+          expect(Bosh::Registry.auth[0]['password']).to eq('admin')
+        end
+      end
+
+      context 'when two users are defined in the new way' do
+        it 'sets the user properly' do
+          config = valid_config
+          config.delete('cloud')
+          config['http'].delete('user')
+          config['http'].delete('password')
+
+          config['http']['auth'] = [
+              { 'username' => 'admin', 'password' => 'admin' },
+              { 'username' => 'admin1', 'password' => 'pass1' },
+          ]
+          Bosh::Registry.configure(config)
+
+          expect(Bosh::Registry.auth.size).to eq(2)
+          expect(Bosh::Registry.auth[0]['username']).to eq('admin')
+          expect(Bosh::Registry.auth[0]['password']).to eq('admin')
+          expect(Bosh::Registry.auth[1]['username']).to eq('admin1')
+          expect(Bosh::Registry.auth[1]['password']).to eq('pass1')
+
+        end
+      end
     end
 
     it "reads provided configuration file and sets singletons for OpenStack" do

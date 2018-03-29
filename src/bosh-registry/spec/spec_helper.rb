@@ -17,6 +17,7 @@ module SpecHelper
       configure_temp_dir
 
       require 'bosh/registry'
+      require 'bosh/registry/api_controller'
       init_database
       @registry_migrations_dir = File.expand_path('../../db/migrations', __FILE__)
     end

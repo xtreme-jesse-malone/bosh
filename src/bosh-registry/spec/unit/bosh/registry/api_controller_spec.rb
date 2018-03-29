@@ -1,10 +1,10 @@
-require "spec_helper"
+require 'spec_helper'
 
-describe Bosh::Registry::ApiController do
-
+describe Bosh::Registry::ApiController do  
   before(:each) do
-    Bosh::Registry.http_user = "admin"
-    Bosh::Registry.http_password = "admin"
+    # Bosh::Registry.http_user = "admin"
+    # Bosh::Registry.http_password = "admin"
+    Bosh::Registry.auth = [{'username' => 'admin', 'password' => 'admin'}]
 
     @instance_manager = double("instance manager")
     Bosh::Registry.instance_manager = @instance_manager
@@ -79,6 +79,12 @@ describe Bosh::Registry::ApiController do
 
       expect_json_response(@session.last_response, 200,
                            { "status" => "ok" })
+    end
+  end
+
+  context "There are multiple users" do
+    it "authenticates multiple users" do
+
     end
   end
 
