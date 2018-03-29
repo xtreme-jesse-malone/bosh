@@ -1,16 +1,18 @@
 require 'spec_helper'
 
+def setup_test
+  @instance_manager = double("instance manager")
+  Bosh::Registry.instance_manager = @instance_manager
+
+  rack_mock = Rack::MockSession.new(Bosh::Registry::ApiController.new)
+  @session = Rack::Test::Session.new(rack_mock)
+end
 describe Bosh::Registry::ApiController do  
   before(:each) do
     # Bosh::Registry.http_user = "admin"
     # Bosh::Registry.http_password = "admin"
     Bosh::Registry.auth = [{'username' => 'admin', 'password' => 'admin'}]
-
-    @instance_manager = double("instance manager")
-    Bosh::Registry.instance_manager = @instance_manager
-
-    rack_mock = Rack::MockSession.new(Bosh::Registry::ApiController.new)
-    @session = Rack::Test::Session.new(rack_mock)
+    setup_test
   end
 
   def expect_json_response(response, status, body)
@@ -82,9 +84,21 @@ describe Bosh::Registry::ApiController do
     end
   end
 
-  context "There are multiple users" do
-    it "authenticates multiple users" do
+  context "When there is a second authorized user" do
+    before(:each) do
+      Bosh::Registry.auth = [{'username' => 'admin', 'password' => 'admin'},{'username' => 'admin1', 'password' => 'admin1'}]
+      setup_test
+    end
 
+    it "returns settings (authorized user, no IP check)" do
+      expect(@instance_manager).to receive(:read_settings).
+          with("foo", nil).and_return("bar")
+
+      @session.basic_authorize("admin1", "admin1")
+      @session.get("/instances/foo/settings")
+
+      expect_json_response(@session.last_response, 200,
+                           { "status" => "ok", "settings" => "bar" })
     end
   end
 

@@ -26,7 +26,6 @@ module Bosh::Registry
             'password' => config['http']['password']
         }
       else
-
         @auth = config['http']['auth']
       end
 

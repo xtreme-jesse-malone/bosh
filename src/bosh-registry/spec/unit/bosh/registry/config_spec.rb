@@ -157,8 +157,10 @@ describe Bosh::Registry do
       expect(logger.level).to eq(Logger::DEBUG)
 
       expect(Bosh::Registry.http_port).to eq(25777)
-      expect(Bosh::Registry.http_user).to eq("admin")
-      expect(Bosh::Registry.http_password).to eq("admin")
+
+      user = Bosh::Registry.auth.first
+      expect(user['username']).to eq("admin")
+      expect(user['password']).to eq("admin")
 
       db = Bosh::Registry.db
       expect(db).to be_kind_of(Sequel::SQLite::Database)
@@ -183,8 +185,10 @@ describe Bosh::Registry do
       expect(logger.level).to eq(Logger::DEBUG)
 
       expect(Bosh::Registry.http_port).to eq(25777)
-      expect(Bosh::Registry.http_user).to eq("admin")
-      expect(Bosh::Registry.http_password).to eq("admin")
+
+      user = Bosh::Registry.auth.first
+      expect(user['username']).to eq("admin")
+      expect(user['password']).to eq("admin")
 
       db = Bosh::Registry.db
       expect(db).to be_kind_of(Sequel::SQLite::Database)
